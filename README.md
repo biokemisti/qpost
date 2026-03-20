@@ -2,11 +2,15 @@
 
 Post quantum cryptography file transfer command line tool.
 
+
+
 # Architecture
 
 One way file transfer protocol. Receiver runs the server source code and sender runs the client source code.
 
 Uses CRYSTALS-Kyber key encapsulation, which has been selected by NIST as one of the standard algorithms for post quantum public-key encryption.
+
+
 
 # Handshake
 
@@ -26,15 +30,31 @@ Client ->> Server: FileData
 Client ->> Server: CloseConnection
 ```
 
-## SmartyPants
 
-SmartyPants converts ASCII punctuation characters into "smart" typographic punctuation HTML entities. For example:
 
-|                  | ASCII                           | HTML                          |
-| ---------------- | ------------------------------- | ----------------------------- |
-| Single backticks | `'Isn't this fun?'`             | 'Isn't this fun?'             |
-| Quotes           | `"Isn't this fun?"`             | "Isn't this fun?"             |
-| Dashes           | `-- is en-dash, --- is em-dash` | -- is en-dash, --- is em-dash |
+# Instructions for use
+
+Clone the repository:
+`git clone https://github.com/biokemisti/qpost`
+
+Initialize CMake:
+`cmake`
+
+Build the project with:
+`make`
+
+
+
+# Dependencies
+In order to successfully build the tool, the following dependencies need to be installed:
+
+
+| Library          | Tested version                  |
+| ---------------- | ------------------------------- |
+| libsodium        | 1.0.21                          |
+| liboqs           | 0.12.0                          |
+
+
 
 And this will produce a flow chart:
 
