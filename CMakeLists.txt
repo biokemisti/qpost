@@ -16,15 +16,8 @@ set(SHARED_SOURCES
     src/handshake.cpp
 )
 
-add_executable(client src/client.cpp ${SHARED_SOURCES})
-target_link_libraries(client 
-    ${SODIUM_LIBRARIES} 
-    ${OQS_LIBRARIES} 
-    OpenSSL::Crypto
-)
-
-add_executable(server src/server.cpp ${SHARED_SOURCES})
-target_link_libraries(server 
+add_executable(qpost src/main.cpp ${SHARED_SOURCES})
+target_link_libraries(qpost 
     ${SODIUM_LIBRARIES} 
     ${OQS_LIBRARIES} 
     OpenSSL::Crypto

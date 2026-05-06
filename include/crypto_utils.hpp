@@ -1,5 +1,6 @@
 /**
- * Utilities related to cryptography. Random number generation, etc.
+ * Utilities related to cryptography. Random number generation,
+ * session key derivation, etc.
  *
  * @author Elmo Moilanen
  */
@@ -19,27 +20,37 @@ namespace crypto
         randombytes_buf(buffer, length);
     }
 
-    // HKDF = HMAC based key derivation function
-    // HMAC = hash based message authentication code
+    // HKDF = HMAC based Key Derivation Function
+    // HMAC = Hash based Message Authentication Code
     int derive_session_keys(
         const uint8_t *kyber_shared_secret,
         const uint8_t *x25519_shared_secret,
         const uint8_t *client_nonce,
         const uint8_t *server_nonce,
         uint8_t *session_key,
-        uint8_t *session_nonce)
+        uint8_t *session_nonce,
+        const uint8_t *pre_shared_key)
     {
-        // Combine the Kyber and X25519 shared secrets
-        uint8_t input_keying_material[handshake::config::KYBER_SHARED_SECRET_SIZE + handshake::config::X25519_SHARED_SECRET_SIZE];
+
+        // Combine Kyber and X25519 shared secrets with the pre-shared key to create input keying material
+        uint8_t input_keying_material[handshake::config::KYBER_SHARED_SECRET_SIZE + handshake::config::X25519_SHARED_SECRET_SIZE + handshake::config::PRE_SHARED_KEY_SIZE];
+
+        size_t ikm_size = 0;
+
         memcpy(input_keying_material, kyber_shared_secret, handshake::config::KYBER_SHARED_SECRET_SIZE);
-        memcpy(input_keying_material + handshake::config::KYBER_SHARED_SECRET_SIZE, x25519_shared_secret, handshake::config::X25519_SHARED_SECRET_SIZE);
+        ikm_size += handshake::config::KYBER_SHARED_SECRET_SIZE;
+
+        memcpy(input_keying_material + ikm_size, x25519_shared_secret, handshake::config::X25519_SHARED_SECRET_SIZE);
+        ikm_size += handshake::config::X25519_SHARED_SECRET_SIZE;
+
+        memcpy(input_keying_material + ikm_size, pre_shared_key, handshake::config::PRE_SHARED_KEY_SIZE);
 
         // Combine the client and server nonces
         uint8_t salt[handshake::config::NONCE_SIZE * 2];
         memcpy(salt, client_nonce, handshake::config::NONCE_SIZE);
         memcpy(salt + handshake::config::NONCE_SIZE, server_nonce, handshake::config::NONCE_SIZE);
 
-        // Create a pseudorandom key with shared secrets and nonces
+        // Create a pseudorandom key with shared secrets and salt
         uint8_t pseudorandom_key[crypto_kdf_hkdf_sha256_KEYBYTES];
         if (crypto_kdf_hkdf_sha256_extract(pseudorandom_key, salt, sizeof(salt), input_keying_material, sizeof(input_keying_material)) != 0)
         {
@@ -82,5 +93,54 @@ namespace crypto
         std::cout << "Successfully derived session key and nonce.\n";
 
         return 0;
+    }
+
+    inline int generate_hmac(const uint8_t *transcript, std::size_t transcript_size, const uint8_t *psk, uint8_t *hmac)
+    {
+        return crypto_auth(hmac, transcript, transcript_size, psk);
+    }
+
+    inline int verify_hmac(const uint8_t *transcript, std::size_t transcript_size, const uint8_t *psk, const uint8_t *hmac)
+    {
+        return crypto_auth_verify(hmac, transcript, transcript_size, psk);
+    }
+
+
+
+
+    // Something like this? Move to chunk_crypto
+    inline int ecrypt_chunk(unsigned char *ciphertext,
+                            unsigned long long *ciphertext_size,
+                            const unsigned char *message,
+                            std::size_t message_size,
+                            const unsigned char *additional_data,
+                            std::size_t additional_data_size,
+                            const uint8_t *nonce,
+                            const uint8_t *session_key)
+    {
+        if (crypto_aead_aes256gcm_is_available() == 0)
+        {
+            std::cout << "AES-256-GCM not available for this CPU.\n";
+            return 1;
+        }
+
+        int encrypted_chunk = crypto_aead_aes256gcm_encrypt(ciphertext,
+                                                            ciphertext_size,
+                                                            message,
+                                                            message_size,
+                                                            additional_data,
+                                                            additional_data_size,
+                                                            NULL,
+                                                            nonce,
+                                                            session_key);
+
+        return encrypted_chunk;
+    }
+
+    inline int decrypt_chunk()
+    {
+        int decrypted_chunk = crypto_aead_aes256gcm_decrypt();
+
+        return decrypted_chunk;
     }
 }

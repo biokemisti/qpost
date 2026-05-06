@@ -8,6 +8,9 @@
 
 namespace handshake::config
 {
+    constexpr std::size_t PRE_SHARED_KEY_SIZE = 32; // Size of the pre-shared secret
+    constexpr std::size_t HMAC_TAG_SIZE = 32; // Size of the HMAC tag
+
     constexpr std::size_t KYBER_PUBLIC_KEY_SIZE = 1184;  // Size of the Kyber public key
     constexpr std::size_t KYBER_CIPHERTEXT_SIZE = 1088;  // Size of the Kyber ciphertext
     constexpr std::size_t KYBER_SECRET_KEY_SIZE = 2400;  // size of the Kyber secret key
