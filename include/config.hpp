@@ -30,6 +30,6 @@ namespace handshake::config
 
 namespace transfer::config
 {
-    constexpr std::size_t NONCE_SIZE = 32;    //
+    constexpr std::size_t NONCE_SIZE = 12;    // Required by AES-GCM
     constexpr std::size_t CHUNK_SIZE = 65536; // 64KB
 }

@@ -98,7 +98,7 @@ namespace crypto
         return crypto_auth_verify(hmac, transcript, transcript_size, psk);
     }
 
-    void encrypt_chunk(unsigned char *ciphertext,
+    bool encrypt_chunk(unsigned char *ciphertext,
                        unsigned long long *ciphertext_size,
                        const unsigned char *message,
                        std::size_t message_size,
@@ -130,10 +130,12 @@ namespace crypto
         catch (const std::exception &e)
         {
             std::cerr << e.what() << "\n";
+            return false;
         }
+        return true;
     }
 
-    void decrypt_chunk(unsigned char *message,
+    bool decrypt_chunk(unsigned char *message,
                        unsigned long long *message_size,
                        const unsigned char *ciphertext,
                        unsigned long long ciphertext_size,
@@ -165,6 +167,8 @@ namespace crypto
         catch (const std::exception &e)
         {
             std::cerr << e.what() << "\n";
+            return false;
         }
+        return true;
     }
 }
