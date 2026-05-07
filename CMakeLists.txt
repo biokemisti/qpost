@@ -14,6 +14,7 @@ link_directories(${SODIUM_LIBRARY_DIRS} ${OQS_LIBRARY_DIRS})
 
 set(SHARED_SOURCES
     src/handshake.cpp
+    src/crypto_utils.cpp
 )
 
 add_executable(qpost src/main.cpp ${SHARED_SOURCES})

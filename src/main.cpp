@@ -24,6 +24,7 @@ void create_config_directory();
 void save_pre_shared_key(const std::string &pre_shared_key_hex);
 std::string get_config_path();
 Arguments parse_arguments(const std::string &mode, int argc, char *argv[]);
+int run_help();
 
 int main(int argc, char *argv[])
 {
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
     {
         if (argc < 2)
         {
-            throw std::invalid_argument("Not enough arguments.");
+            throw std::invalid_argument("Invalid number of arguments.");
         }
 
         const std::string operation_mode = argv[1];
@@ -45,14 +46,18 @@ int main(int argc, char *argv[])
         else if (operation_mode == "set-psk")
             return run_set_pre_shared_key(argc, argv);
 
+        else if (operation_mode == "--help")
+            return run_help();
+
         else
         {
-            throw std::invalid_argument("Invalid mode of operation.");
+            throw std::invalid_argument("Invalid command.");
         }
     }
     catch (const std::exception &e)
     {
-        std::cerr << e.what() << " Type --help for help." << "\n";
+        std::cerr << e.what() << "\n"
+                  << "Type --help for more information." << "\n";
         return 1;
     }
 
@@ -71,12 +76,12 @@ int run_client(int argc, char *argv[])
 
     if (inet_pton(AF_INET, arguments.ip_address.c_str(), &address.sin_addr) <= 0)
     {
-        throw std::runtime_error("Invalid IP address");
+        throw std::runtime_error("Invalid IP address.");
     }
 
     if (connect(send_socket, (sockaddr *)&address, sizeof(address)) < 0)
     {
-        throw std::runtime_error("Connection failed");
+        throw std::runtime_error("Connection failed.");
     }
 
     uint8_t pre_shared_key[handshake::config::PRE_SHARED_KEY_SIZE];
@@ -102,7 +107,7 @@ int run_server(int argc, char *argv[])
     bind(listen_socket, (sockaddr *)&address, sizeof(address));
 
     listen(listen_socket, 1);
-    std::cout << "Listening on port " << arguments.port_number << "\n";
+    std::cout << "Listening on port " << arguments.port_number << ".\n";
 
     int client = accept(listen_socket, nullptr, nullptr);
 
@@ -120,7 +125,7 @@ int run_set_pre_shared_key(int argc, char *argv[])
 {
     if (argc != 3 && argc != 4)
     {
-        throw std::invalid_argument("Invalid amount of arguments.");
+        throw std::invalid_argument("Invalid number of arguments.");
     }
 
     std::string pre_shared_key_hex;
@@ -157,7 +162,7 @@ void load_pre_shared_key(uint8_t *pre_shared_key)
     const std::string prefix = "psk=";
     if (line.rfind(prefix, 0) != 0)
     {
-        throw std::runtime_error("Invalid config format");
+        throw std::runtime_error("Invalid configuration format.");
     }
     std::string hex = line.substr(prefix.size());
     if (hex.size() != handshake::config::PRE_SHARED_KEY_SIZE * 2)
@@ -228,7 +233,7 @@ Arguments parse_arguments(const std::string &mode, int argc, char *argv[])
     if (mode == "server")
     {
         if (argc != 3)
-            throw std::invalid_argument("Usage: server <port>");
+            throw std::invalid_argument("Invalid number of arguments.");
 
         return arguments;
     }
@@ -237,7 +242,7 @@ Arguments parse_arguments(const std::string &mode, int argc, char *argv[])
     {
         if (argc != 6)
         {
-            throw std::invalid_argument("Invalid arguments.");
+            throw std::invalid_argument("Invalid number of arguments.");
         }
 
         arguments.ip_address = argv[3];
@@ -251,6 +256,34 @@ Arguments parse_arguments(const std::string &mode, int argc, char *argv[])
     }
 
     return arguments;
+}
+
+int run_help()
+{
+    const char *logo =
+        "\n"
+        "                                       █████       \n"
+        "                                      ▒▒███        \n"
+        "  ████████ ████████   ██████   █████  ███████      \n"
+        " ███▒▒███ ▒▒███▒▒███ ███▒▒███ ███▒▒  ▒▒▒███▒       \n"
+        "▒███ ▒███  ▒███ ▒███▒███ ▒███▒▒█████   ▒███        \n"
+        "▒███ ▒███  ▒███ ▒███▒███ ▒███ ▒▒▒▒███  ▒███ ███    \n"
+        "▒▒███████  ▒███████ ▒▒██████  ██████   ▒▒█████     \n"
+        " ▒▒▒▒▒███  ▒███▒▒▒   ▒▒▒▒▒▒  ▒▒▒▒▒▒     ▒▒▒▒▒      \n"
+        "     ▒███  ▒███                                    \n"
+        "     █████ █████                                   \n"
+        "    ▒▒▒▒▒ ▒▒▒▒▒                                    \n"
+        "\n";
+
+    const char *instructions =
+        "client    <port number> <ip address> <local file path> <remote file path>\n"
+        "server    <port number>\n"
+        "set-psk   <pre shared key> | --file <file path>\n";
+
+    std::cout << logo;
+    std::cout << instructions;
+
+    return 0;
 }
 
 // Future fixes:
