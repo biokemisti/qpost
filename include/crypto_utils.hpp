@@ -31,8 +31,7 @@ namespace crypto
 
     int verify_hmac(const uint8_t *transcript, std::size_t transcript_size, const uint8_t *psk, const uint8_t *hmac);
 
-    // Something like this? Move to chunk_crypto
-    int encrypt_chunk(unsigned char *ciphertext,
+    void encrypt_chunk(unsigned char *ciphertext,
                       unsigned long long *ciphertext_size,
                       const unsigned char *message,
                       std::size_t message_size,
@@ -41,5 +40,12 @@ namespace crypto
                       const uint8_t *nonce,
                       const uint8_t *session_key);
 
-    // int decrypt_chunk();
+    void decrypt_chunk(unsigned char *message,
+                      unsigned long long *message_size,
+                      const unsigned char *ciphertext,
+                      unsigned long long ciphertext_size,
+                      const unsigned char *additional_data,
+                      std::size_t additional_data_size,
+                      const uint8_t *nonce,
+                      const uint8_t *session_key);
 }

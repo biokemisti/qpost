@@ -98,38 +98,73 @@ namespace crypto
         return crypto_auth_verify(hmac, transcript, transcript_size, psk);
     }
 
-    int encrypt_chunk(unsigned char *ciphertext,
-                      unsigned long long *ciphertext_size,
-                      const unsigned char *message,
-                      std::size_t message_size,
-                      const unsigned char *additional_data,
-                      std::size_t additional_data_size,
-                      const uint8_t *nonce,
-                      const uint8_t *session_key)
+    void encrypt_chunk(unsigned char *ciphertext,
+                       unsigned long long *ciphertext_size,
+                       const unsigned char *message,
+                       std::size_t message_size,
+                       const unsigned char *additional_data,
+                       std::size_t additional_data_size,
+                       const uint8_t *nonce,
+                       const uint8_t *session_key)
     {
-        if (crypto_aead_aes256gcm_is_available() == 0)
+        try
         {
-            std::cout << "AES-256-GCM not available for this CPU.\n";
-            return 1;
+            if (crypto_aead_aes256gcm_is_available() == 0)
+            {
+                throw std::runtime_error("AES-256-GCM not available for this CPU.");
+            }
+
+            if (crypto_aead_aes256gcm_encrypt(ciphertext,
+                                              ciphertext_size,
+                                              message,
+                                              message_size,
+                                              additional_data,
+                                              additional_data_size,
+                                              NULL,
+                                              nonce,
+                                              session_key) < 0)
+            {
+                throw std::runtime_error("Failed to encrypt chunk.");
+            }
         }
-
-        int encrypted_chunk = crypto_aead_aes256gcm_encrypt(ciphertext,
-                                                            ciphertext_size,
-                                                            message,
-                                                            message_size,
-                                                            additional_data,
-                                                            additional_data_size,
-                                                            NULL,
-                                                            nonce,
-                                                            session_key);
-
-        return encrypted_chunk;
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << "\n";
+        }
     }
 
-    // int decrypt_chunk()
-    // {
-    //     int decrypted_chunk = crypto_aead_aes256gcm_decrypt();
+    void decrypt_chunk(unsigned char *message,
+                       unsigned long long *message_size,
+                       const unsigned char *ciphertext,
+                       unsigned long long ciphertext_size,
+                       const unsigned char *additional_data,
+                       std::size_t additional_data_size,
+                       const uint8_t *nonce,
+                       const uint8_t *session_key)
+    {
+        try
+        {
+            if (crypto_aead_aes256gcm_is_available() == 0)
+            {
+                throw std::runtime_error("AES-256-GCM not available for this CPU.");
+            }
 
-    //     return decrypted_chunk;
-    // }
+            if (crypto_aead_aes256gcm_decrypt(message,
+                                              message_size,
+                                              NULL,
+                                              ciphertext,
+                                              ciphertext_size,
+                                              additional_data,
+                                              additional_data_size,
+                                              nonce,
+                                              session_key) < 0)
+            {
+                throw std::runtime_error("Failed to decrypt chunk.");
+            }
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << "\n";
+        }
+    }
 }
