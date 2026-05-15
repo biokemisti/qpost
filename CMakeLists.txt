@@ -15,6 +15,7 @@ link_directories(${SODIUM_LIBRARY_DIRS} ${OQS_LIBRARY_DIRS})
 set(SHARED_SOURCES
     src/handshake.cpp
     src/crypto_utils.cpp
+    src/transfer.cpp
 )
 
 add_executable(qpost src/main.cpp ${SHARED_SOURCES})
@@ -23,3 +24,14 @@ target_link_libraries(qpost
     ${OQS_LIBRARIES} 
     OpenSSL::Crypto
 )
+
+enable_testing()
+
+add_executable(test_crypto tests/test_crypto.cpp ${SHARED_SOURCES})
+target_link_libraries(test_crypto 
+    ${SODIUM_LIBRARIES} 
+    ${OQS_LIBRARIES} 
+    OpenSSL::Crypto
+)
+
+add_test(NAME CryptoTests COMMAND test_crypto)

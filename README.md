@@ -88,4 +88,4 @@ make
 - Encryption: AES256 post quantum secure according to NIST
 - POCO libraries for transferring data, wraps C++ iostreams with network sockets
 - break file binaries into chunks, Encrypt with AES256, send header with incremented nonce and chunk size, send chunk, send end of transmission
-- implement simple CLI
+- Error handling is all over the place. Propagate throws from low level functions to main try catch.

@@ -109,6 +109,11 @@ namespace crypto
     {
         try
         {
+            if (sodium_init() < 0)
+            {
+                throw std::runtime_error("Failed to initialize Libsodium.");
+            }
+
             if (crypto_aead_aes256gcm_is_available() == 0)
             {
                 throw std::runtime_error("AES-256-GCM not available for this CPU.");
@@ -146,6 +151,11 @@ namespace crypto
     {
         try
         {
+            if (sodium_init() < 0)
+            {
+                throw std::runtime_error("Failed to initialize Libsodium.");
+            }
+
             if (crypto_aead_aes256gcm_is_available() == 0)
             {
                 throw std::runtime_error("AES-256-GCM not available for this CPU.");

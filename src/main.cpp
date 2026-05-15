@@ -6,7 +6,9 @@
 #include <cstdlib>
 #include <fstream>
 #include <filesystem>
+#include <cstring>
 #include "handshake.hpp"
+#include "transfer.hpp"
 
 struct Arguments
 {
@@ -51,13 +53,13 @@ int main(int argc, char *argv[])
 
         else
         {
-            throw std::invalid_argument("Invalid command.");
+            throw std::invalid_argument("Invalid command: " + operation_mode);
         }
     }
     catch (const std::exception &e)
     {
         std::cerr << e.what() << "\n"
-                  << "Type --help for more information." << "\n";
+                  << "Use command: \"--help\" for more information." << "\n";
         return 1;
     }
 
@@ -81,13 +83,19 @@ int run_client(int argc, char *argv[])
 
     if (connect(send_socket, (sockaddr *)&address, sizeof(address)) < 0)
     {
-        throw std::runtime_error("Connection failed.");
+        throw std::runtime_error(std::string("Connection failed.") + strerror(errno));
     }
 
     uint8_t pre_shared_key[handshake::config::PRE_SHARED_KEY_SIZE];
     load_pre_shared_key(pre_shared_key);
 
-    handshake::client_handshake(send_socket, pre_shared_key);
+    std::optional<handshake::SessionKeys> session_keys = handshake::client_handshake(send_socket, pre_shared_key);
+    if (!session_keys)
+    {
+        throw std::runtime_error("Handshake failed.");
+    }
+
+    transfer::stream_send_file(send_socket, session_keys.value(), arguments.local_file_path, arguments.remote_file_path);
 
     close(send_socket);
     return 0;
@@ -98,15 +106,26 @@ int run_server(int argc, char *argv[])
     Arguments arguments = parse_arguments("server", argc, argv);
 
     int listen_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (listen_socket < 0)
+    {
+        throw std::runtime_error(std::string("Socket creation failed: ") + strerror(errno));
+    }
 
     sockaddr_in address{};
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(arguments.port_number);
 
-    bind(listen_socket, (sockaddr *)&address, sizeof(address));
+    if (bind(listen_socket, (sockaddr *)&address, sizeof(address)) < 0)
+    {
+        throw std::runtime_error(std::string("Bind failed: ") + strerror(errno));
+    }
 
-    listen(listen_socket, 1);
+    if (listen(listen_socket, 1) < 0)
+    {
+        throw std::runtime_error(std::string("Listen failed: ") + strerror(errno));
+    }
+
     std::cout << "Listening on port " << arguments.port_number << ".\n";
 
     int client = accept(listen_socket, nullptr, nullptr);
@@ -114,7 +133,13 @@ int run_server(int argc, char *argv[])
     uint8_t pre_shared_key[handshake::config::PRE_SHARED_KEY_SIZE];
     load_pre_shared_key(pre_shared_key);
 
-    handshake::server_handshake(client, pre_shared_key);
+    std::optional<handshake::SessionKeys> session_keys = handshake::server_handshake(client, pre_shared_key);
+    if (!session_keys)
+    {
+        throw std::runtime_error("Handshake failed.");
+    }
+
+    transfer::stream_receive_file(client, session_keys.value());
 
     close(client);
     close(listen_socket);
@@ -223,7 +248,15 @@ Arguments parse_arguments(const std::string &mode, int argc, char *argv[])
 
     try
     {
-        arguments.port_number = std::stoi(argv[2]);
+        int port_number = std::stoi(argv[2]);
+        if (port_number < 0 || port_number > 65535)
+        {
+            arguments.port_number = std::stoi(argv[2]);
+        }
+        else
+        {
+            throw std::invalid_argument("Port number must be between 0 and 65635.");
+        }
     }
     catch (...)
     {
