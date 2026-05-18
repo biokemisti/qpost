@@ -309,7 +309,7 @@ int run_help()
         "\n";
 
     const char *instructions =
-        "client    <port number> <ip address> <local file path> <remote file path>\n"
+        "client    <port number> <IP address> <local file path> <remote file path>\n"
         "server    <port number>\n"
         "set-psk   <pre shared key> | --file <file path>\n";
 
@@ -320,7 +320,6 @@ int run_help()
 }
 
 // Future fixes:
-// help message
 // error handling to syscall returns
 // close sockets on failure
 // validate PSK

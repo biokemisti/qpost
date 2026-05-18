@@ -219,22 +219,6 @@ std::optional<handshake::SessionKeys> handshake::server_handshake(int socket, co
     }
     std::cout << "Client authenticated successfully.\n";
 
-    // ------------- SEND ServerFinished MESSAGE -------------
-    handshake::FinishedMessage server_finished{};
-    std::size_t final_transcript_size = sizeof(client_hello) + sizeof(server_hello) + sizeof(client_keyshare);
-    uint8_t final_transcript[final_transcript_size];
-    std::size_t final_transcript_offset = 0;
-
-    memcpy(final_transcript + final_transcript_offset, &client_hello, sizeof(client_hello));
-    final_transcript_offset += sizeof(client_hello);
-    memcpy(final_transcript + final_transcript_offset, &server_hello, sizeof(server_hello));
-    final_transcript_offset += sizeof(server_hello);
-    memcpy(final_transcript + final_transcript_offset, &client_keyshare, sizeof(client_keyshare));
-
-    crypto::generate_hmac(final_transcript, final_transcript_size, pre_shared_key, server_finished.hmac);
-    send(socket, &server_finished, sizeof(server_finished), 0);
-    std::cout << "ServerFinished sent.\n";
-
     // ----------------- DERIVE SessionKeys ------------------
     // Derive X25519 shared secret
     unsigned char x25519_shared_secret[handshake::config::X25519_SHARED_SECRET_SIZE];
@@ -270,6 +254,22 @@ std::optional<handshake::SessionKeys> handshake::server_handshake(int socket, co
     // Erase shared secrets from memory since they are no longer needed
     sodium_memzero(kyber_shared_secret, sizeof(kyber_shared_secret));
     sodium_memzero(x25519_shared_secret, sizeof(x25519_shared_secret));
+
+    // ------------- SEND ServerFinished MESSAGE -------------
+    handshake::FinishedMessage server_finished{};
+    std::size_t final_transcript_size = sizeof(client_hello) + sizeof(server_hello) + sizeof(client_keyshare);
+    uint8_t final_transcript[final_transcript_size];
+    std::size_t final_transcript_offset = 0;
+
+    memcpy(final_transcript + final_transcript_offset, &client_hello, sizeof(client_hello));
+    final_transcript_offset += sizeof(client_hello);
+    memcpy(final_transcript + final_transcript_offset, &server_hello, sizeof(server_hello));
+    final_transcript_offset += sizeof(server_hello);
+    memcpy(final_transcript + final_transcript_offset, &client_keyshare, sizeof(client_keyshare));
+
+    crypto::generate_hmac(final_transcript, final_transcript_size, pre_shared_key, server_finished.hmac);
+    send(socket, &server_finished, sizeof(server_finished), 0);
+    std::cout << "ServerFinished sent.\n";
 
     return session_keys;
 }
