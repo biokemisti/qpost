@@ -24,17 +24,16 @@ Note over Client, Server: PSK known to both parties
 
 Client ->> Server: ClientHello: nonce, supported alogrithms
 
-Server ->> Client: ServerHello: chosen algorithm, nonce, x25519 public key, kyber public key
+Server ->> Client: ServerHello: chosen algorithm, nonce, X25519 public key, ML-KEM public key
 
-Note over Client: Client derives hybrid secret
-Client ->> Server: ClientKeyShare: X25519 public key, encapsulated kyber ciphertext, HMAC(PSK, handshake summary)
+Note over Client: Client computes X25519 shared secret and encapsulates ML-KEM shared secret
+Client ->> Server: ClientKeyShare: X25519 public key, ML-KEM ciphertext, HMAC(PSK, handshake transcript)
 
-Note over Client, Server: Both sides compute shared secret
+Note over Server: Server verifies client HMAC, derives X25519 shared secret, and decapsulates ML-KEM ciphertext
 
-Note over Server: Server verifies client HMAC and derives hybrid secret
-Server ->> Client: ServerFinished: HMAC(PSK, handshake summary, client HMAC)
+Note over Client, Server: Both parties derive SessionKeys using HKDF(hybrid secret, PSK, nonces)
 
-Note over Client, Server: Both parties derive SessionKey = HKDF(hybrid secret, PSK)
+Server ->> Client: ServerFinished: HMAC(PSK, handshake transcript)
 
 Client ->> Server: EncryptedFileData (AES-256-GCM)
 Client ->> Server: CloseConnection
@@ -84,8 +83,3 @@ make
 ```bash
 ./client
 ```
-
-- Encryption: AES256 post quantum secure according to NIST
-- POCO libraries for transferring data, wraps C++ iostreams with network sockets
-- break file binaries into chunks, Encrypt with AES256, send header with incremented nonce and chunk size, send chunk, send end of transmission
-- Error handling is all over the place. Propagate throws from low level functions to main try catch.
